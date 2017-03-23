@@ -25,6 +25,12 @@ To measure emission line properties:
 python measuring_quasar_properties_general_errors.py line_to_fit path_to_data/ file_location_with_list_of_spectra_name
 # remember to add after 'path_to_data'  the symbol '/'
 
+To do nice plots of the fit line properties (still needs development for MgII and Hbeta):
+
+python plot_best_fits.py line_to_fit path_to_data/ file_location_with_list_of_spectra_name
+# remember to add after 'path_to_data'  the symbol '/'
+
+
 
 
 The file constraint_single.cfg is the configuration file, here I define the  emission line complexes and set the limits of the 

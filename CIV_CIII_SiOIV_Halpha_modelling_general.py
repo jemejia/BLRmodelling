@@ -1,6 +1,6 @@
 # to run python CIV_CIII_SiOIV_modelling_general.py line_to_fit path_to_data/ file_location_with_list_of_spectra_name # remember to after 'path_to_data' to include the symbol '/'
 import matplotlib
-#matplotlib.use('Agg') 
+matplotlib.use('Agg') 
 #matplotlib.use('Agg')
 from matplotlib import pylab
 import astropy.units as un

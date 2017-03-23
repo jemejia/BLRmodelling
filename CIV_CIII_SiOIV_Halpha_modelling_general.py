@@ -941,7 +941,7 @@ for i in sp_to_run:
         sample_dictionary[fileroot]['model']['Lya_complex']['continuous']['chi2']=        chi2
         sample_dictionary[fileroot]['model']['Lya_complex']['continuous']['dof']=        dof 
     if line_to_fit=='Halpha':           
-        sample_dictionary[fileroot]['model']['Halpha_complex']['datafile']=      obj_path +'Lya_fit.txt'
+        sample_dictionary[fileroot]['model']['Halpha_complex']['datafile']=      obj_path +'Halpha_fit.txt'
         sample_dictionary[fileroot]['model']['Halpha_complex']['continuous']={}
         sample_dictionary[fileroot]['model']['Halpha_complex']['continuous']['datafile']=        obj_path + 'continuous_Halpha.txt'
         sample_dictionary[fileroot]['model']['Halpha_complex']['continuous']['chi2']=        chi2

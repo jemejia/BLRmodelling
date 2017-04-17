@@ -333,10 +333,10 @@ def line_parameters(sp,continuous,model,line_info,linename='doesnotmatter'):
         fwhm_up=width_obs_up/count_up
     if (len(argmaxi_low)==1):
         #print "argmax = 1"
-        f_obs_func = interp1d(xarr, total-total[argmaxi[0]]/2.0, kind='linear')
-        spline_obs = interpolation(xo, f_obs_func(xo))       
-        roots_obs=spline_obs.roots()
         try:
+            f_obs_func = interp1d(xarr, total-total[argmaxi[0]]/2.0, kind='linear')
+	    spline_obs = interpolation(xo, f_obs_func(xo))       
+	    roots_obs=spline_obs.roots()
             fwhm_low=roots_obs[-1]-roots_obs[0]
         except:
             fwhm_low=0

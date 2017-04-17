@@ -392,7 +392,7 @@ for i in sp_to_run:
         #FWHM_Mg=sp.specfit.measure_approximate_fwhm().value
         FWHMV_Mg=wl_to_kms(FWHM_Mg,2800)
         
-        sigma_template=900/2.355
+        sigma_template=900/2.355 
         sigmav_Mg=FWHMV_Mg/2.355
         sigma=kms_to_wl(np.sqrt(sigmav_Mg*sigmav_Mg-sigma_template*sigma_template),2800) 
         
@@ -401,6 +401,7 @@ for i in sp_to_run:
         #TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE
         #TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE#TWICE
     if FWHM_Mg==np.inf:
+        print 'FWHM(MgII) cannot be obtained in '+ fileroot.split('.txt')[0]
         continue
     fe_fit1=fe_fit
     sp.data=sp2.data - continuous_UV
@@ -418,14 +419,14 @@ for i in sp_to_run:
             
     sp.data=sp2.data - continuous_UV
     #fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.92,1.02], vlim=[-0.1,0.1], do_fit=fit_fe_UV)
-    fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.70,1.10], vlim=[-0.1,0.1], do_fit=fit_fe_UV)
+    fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.70,1.3], vlim=[-3.0,3.0], do_fit=fit_fe_UV)
     
     
     fe_template_UV.data=fe_fit1
     fe_template_UV.xarr=sp.xarr
     sp.data=sp2.data - continuous_UV
     
-    fe_fit_blue,params1=rescale(sp,"SBB",i,xmin_fe,xbreak,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.85,1.0], vlim=[-0,1,0.1], do_fit=fit_fe_UV)
+    fe_fit_blue,params1=rescale(sp,"SBB",i,xmin_fe,xbreak,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.70,1.3], vlim=[-3.0,3.0], do_fit=fit_fe_UV)
     argbreak=np.argmin(np.abs(sp.xarr.value-xbreak))
     argbalmer=np.argmin(np.abs(sp.xarr.value-xbalmer))
     

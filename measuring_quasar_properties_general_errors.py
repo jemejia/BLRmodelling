@@ -313,7 +313,7 @@ for obj in sp_to_run:
         arg1450=np.argmin(np.abs(xarr-wavelenght_cont))
         arg14501=np.argmin(np.abs(sp.xarr.value-wavelenght_cont))
         #cont1450=continuous[arg1450]*10**(mag_order)*1450.0*1.0
-        cont1450=conti[arg1450]*10**(mag_order)*1450.0*1.0
+        cont1450=conti[arg1450]*10**(mag_order)*wavelenght_cont*1.0
         lcont=cont1450
         if arg14501>=10:
             lconte=np.median((sp.error/sp.data)[arg14501-10:arg14501+10])

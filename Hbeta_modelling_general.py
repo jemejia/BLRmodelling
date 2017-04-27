@@ -280,9 +280,9 @@ for i in sp_to_run:
             
             
             backup=sp.copy()
-                    #backup.plotter()
-            backup.baseline.powerlaw=True
-            backup.baseline(xmin=xminc1, xmax=xmaxc1, exclude=exclude_cont, subtract=False, reset_selection=False, highlight_fitregion=False,powerlaw=True,interactive=False,qxuiet=False,LoudDebug=False,annotate=False)
+            #backup.plotter()
+            backup.baseline.powerlaw=False
+            backup.baseline(xmin=xminc1, xmax=xmaxc1, exclude=exclude_cont, subtract=False, reset_selection=False, highlight_fitregion=False,powerlaw=False,interactive=False,qxuiet=False,LoudDebug=False,annotate=False)
             continuous=backup.baseline.basespec
             continuous_OP=continuous
             

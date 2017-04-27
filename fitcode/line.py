@@ -2014,7 +2014,7 @@ def fe_fitter(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path
 
 
 
-def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0):
+def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
     if do_fit:
         sp_copy=sp.copy()
         sp.plotter.autorefresh=False
@@ -2026,7 +2026,7 @@ def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, contin
         deltav=100.0/2.355
         sigmatemplate=900.0/2.355
             
-        x2800=np.argmin(np.abs(sp.xarr.value-2800.0))
+        x2800=np.argmin(np.abs(sp.xarr.value-central_wl))
         dl=sp.xarr.value[x2800+1]-sp.xarr.value[x2800]
         sigma_model=fe_uv_params[0]/2.355
         delta_sigma=np.sqrt(sigma_model*sigma_model-sigmatemplate*sigmatemplate)
@@ -2064,7 +2064,7 @@ def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, contin
         else:
             exclude=[]
             
-        s_cont=np.arange(1.0,1.01,0.01)
+        s_cont=np.arange(1.0,1.01,0.02)
         shift_total=np.arange(0.0,1.0,2.5)
         chi2=np.empty(len(shift_total)*len(s_cont))
         amplitude=np.empty(len(shift_total)*len(s_cont))

@@ -2950,11 +2950,115 @@ def rescale(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="
 
 
 
+
+    
+def scale_and_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="./plots/", slim=[0.1,10.0],vlim=[-10.0,10.0],do_fit=True):
+    if do_fit:
+        
+        #number,name,mag,group,redshift,galactic_comp=np.genfromtxt("quasar_data.txt", dtype="|S10",unpack=True)       
+        #del(number,mag,redshift)
+        
+    #-----------------------------defining fe template fitter ------------------------------------#
+        
+        
+        
+        def model(xarr, scale_fe,shift_fe):
+                
+            try:
+		    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+									       fe_template.xarr.value+shift_fe, 
+									       fe_template.data )
+            except:    
+		        new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+									       fe_template.xarr+shift_fe, 
+									       fe_template.data )
+            new_template=  new_fe_template 
+            return new_fe_template
+
+
+        
+
+
+        modelclass = pyspeckit.spectrum.models.model.SpectralModel(model,
+                                                                   2, 
+                                                                   parnames=['scale_fe','shift_fe'],#,'scale_balmer'], 
+                                                                   parlimited=[(True,True),(True,True)],
+                                                                   parlimits=[(slim[0],slim[1]), (vlim[0],vlim[1])],
+                                                                   
+                                                                    shortvarnames=(r'Af',r'\Delta xf'),#,r'Ab'),
+                                                                   centroid_par='shift_fe' )
+        fitter_name="rescale"+str(np.random.rand(1)[0])
+        modelclass.__name__ = fitter_name 
+
+            
+
+        #-----------------------------defining fe template fitter ------------------------------------#
+
+        
+        
+        
+        # -----------------  fitting ---------------------
+        
+        exclude_file = "./excludes/exclude_" + line_name + ".txt"
+        if os.path.exists(exclude_file) and os.path.isfile(exclude_file):
+            exclude_data=np.loadtxt(exclude_file,skiprows=2)
+            exclude=exclude_data[spec_number,:]
+        else:
+            exclude=[]
+            
+            
+            
+        sp.Registry.add_fitter(fitter_name,modelclass,2,override=True,multisingle='multi')
+        sp.specfit(fittype=fitter_name,exclude=exclude,guesses=[1.0,0],xmin=xmin,xmax=xmax)
+        
+        sp.specfit.fullsizemodel()  
+        
+        fe_template.data*=sp.specfit.parinfo.values[0]
+        
+	try:
+		wltemp=fe_template.xarr.value+sp.specfit.parinfo.values[1]
+		fe_template.xarr=wltemp
+	except:
+		fe_template.xarr+=sp.specfit.parinfo.values[1]
+        
+        
+        
+        fitmin=np.argmin(np.abs(sp.xarr.value-xmin))
+        fitmax=np.argmin(np.abs(sp.xarr.value-xmax))
+        print fitmin, fitmax, len(sp.data)
+        
+        if False:
+            #-----------restarting plotter------------#
+            sp.plotter.refresh()    
+            sp.plotter.reset_limits()
+            sp.plotter(figure=1,xmin=xmin,xmax=xmax)
+            #-----------restarting plotter------------#
+        
+            plot_file=plot_path + "fe_fit_" + line_name + "_" + group[spec_number]+"_"+ name[spec_number] + ".png"
+            pylab.figure()
+            pylab.ylim(ymin=-1.2*np.abs(sp.data[fitmin:fitmax].min()),ymax=2*sp.specfit.residuals[fitmin:fitmax].max())
+            pylab.xlim(xmin=xmin-300,xmax=xmax)
+            pylab.ylabel(r'$10^{'+str(magorder-8)+'}$ erg s$^{-1}$  $\AA^{-1}$')
+            pylab.xlabel(r'$\AA$')
+            pylab.plot(sp.xarr,sp.data,'k')
+            pylab.plot(sp.xarr,sp.specfit.fullmodel,'r')
+            pylab.savefig(plot_file)
+            
+            #pylab.close()
+            # -----------------  ploting fit---------------------
+        
+        sp.specfit.fullsizemodel() 
+        sp.data=sp.data-sp.specfit.fullmodel
+    return sp.specfit.fullmodel, sp.specfit.parinfo.values
+
+
+
+
+
 def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="./plots/", do_fit=True):
     if do_fit:
         
-        number,name,mag,group,redshift,galactic_comp=np.genfromtxt("quasar_data.txt", dtype="|S10",unpack=True)       
-        del(number,mag,redshift)
+	    
         
     #-----------------------------defining fe template fitter ------------------------------------#
         
@@ -2963,11 +3067,22 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         def model(xarr, scale_fe,shift_fe, smooth_factor_fe):#,scale_balmer):,fe_template=fe_template.copy(), balmer_template=balmer_template.copy()):
                 
 
-            new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr.as_unit('angstroms'), 
-                                                                           fe_template.xarr.as_unit('angstroms')+shift_fe, 
-                                                                           fe_template.data )
+	                    
+            try:
+		    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+									       fe_template.xarr.value+shift_fe, 
+									       fe_template.data )
+            except:    
+		    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+									       fe_template.xarr+shift_fe, 
+									       fe_template.data )
+
                 
-            new_template=  new_fe_template #+ new_balmer_template 
+
+
+
+
+
             return new_fe_template
 
 
@@ -2979,10 +3094,10 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
                                                                        parnames=['scale_fe','shift_fe','smooth_fe'],#,'scale_balmer'], 
                                                                        parlimited=[(True,True),(False,False),(True,False)],#,(False,False)],  
                                                                        parlimits=[(0.1,10.0), (-10.0,10.0),(0,0)],#,(0.9,1.1)], 
-                                                                       
+                                                                         
                                                                        shortvarnames=(r'Af',r'\Delta xf',r'sigma_xf'),#,r'Ab'),
                                                                        centroid_par='shift_fe' )
-        modelclass.__name__ = "template"
+        modelclass.__name__ = "template" 
 
             
 
@@ -2990,9 +3105,9 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
 
         
         #-----------restarting plotter------------#
-        sp.plotter.refresh()    
-        sp.plotter.reset_limits()
-        sp.plotter(figure=1,xmin=xmin,xmax=xmax)
+        #sp.plotter.refresh()    
+        #sp.plotter.reset_limits()
+        #sp.plotter(figure=1,xmin=xmin,xmax=xmax)
         #-----------restarting plotter------------#
         
         
@@ -3013,7 +3128,15 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         sp.specfit.fullsizemodel()  
         
         fe_template.data*=sp.specfit.parinfo.values[0]
-        fe_template.xarr+=sp.specfit.parinfo.values[1]
+        
+	try:
+		wltemp=fe_template.xarr.value+sp.specfit.parinfo.values[1]
+		fe_template.xarr=wltemp
+	except:
+		fe_template.xarr+=sp.specfit.parinfo.values[1]
+        
+
+
         
         new_template=fe_template.copy()            
         deltav=100.0/2.355
@@ -3044,9 +3167,17 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
                 def model(xarr, scale_fe,shift_fe, smooth_factor_fe):#,scale_balmer):,fe_template=fe_template.copy(), balmer_template=balmer_template.copy()):
                     
 
-                    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr.as_unit('angstroms'), 
-                                                                               fe_template.xarr.as_unit('angstroms')+shift_fe, 
-                                                                               fe_template.data )
+                    try:
+			    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+										       fe_template.xarr.value+shift_fe, 
+										       fe_template.data )
+		    except:    
+			    new_fe_template = scale_fe*pyspeckit.interpolation._interp(xarr, 
+										       fe_template.xarr+shift_fe, 
+										       fe_template.data )
+
+
+
                     
                     return new_fe_template
 
@@ -3061,15 +3192,16 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
                                                                            parlimits=[(0.1,10.0), (-10.0,10.0),(0,0)],#,(0.9,1.1)], 
                                                                            shortvarnames=(r'Af',r'\Delta xf',r'sigma_xf'),#,r'Ab'),
                                                                            centroid_par='shift_fe' )
-                modelclass.__name__ = "template"
+		modelname="template" + str(np.random.rand(1)[0])
+                modelclass.__name__ = modelname 
 
 
         
             
             
         
-                sp.Registry.add_fitter('template',modelclass,3,multisingle='multi')
-                sp.specfit(fittype='template',exclude=exclude,guesses=[1.0,0,1.0],xmin=xmin,xmax=xmax,debug=False,verbose=False)
+                sp.Registry.add_fitter(modelname,modelclass,3,multisingle='multi')
+                sp.specfit(fittype=modelname,exclude=exclude,guesses=[1.0,0,1.0],xmin=xmin,xmax=xmax,debug=False,verbose=False)
             
                 sp.specfit.fullsizemodel()  
             
@@ -3111,7 +3243,7 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         fitmax=np.argmin(np.abs(sp.xarr-xmax))
         print fitmin, fitmax, len(sp.data)
         
-        plot_file=plot_path + "fe_fit_" + line_name + "_" + group[spec_number]+"_"+ name[spec_number] + ".png"
+        plot_file=plot_path + "fe_fit_" + line_name   + "_0.png"
         pylab.figure()
         pylab.ylim(ymin=-1.2*np.abs(sp.data[fitmin:fitmax].min()),ymax=2*sp.specfit.residuals[fitmin:fitmax].max())
         pylab.xlim(xmin=xmin-300,xmax=xmax)

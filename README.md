@@ -6,7 +6,7 @@ To fit Lya, SiOIV, CIV, CIII and Halpha lines:
 
 python CIV_CIII_SiOIV_modelling_general.py line_to_fit path_to_data/ file_location_with_list_of_spectra_name 
 # remember to add after 'path_to_data'  the symbol '/'
-
+# Please make your spectrum data files in path_to_data/ to have '.txt' extension. 
 
 
 To fit MgII:

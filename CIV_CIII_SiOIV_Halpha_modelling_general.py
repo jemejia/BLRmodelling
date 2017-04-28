@@ -810,7 +810,7 @@ for i in sp_to_run:
     total_lines=( CIV_fit + C_fit +
            + SiOIV_fit +CIII_fit+Lya_fit+Halpha_fit)
     
-    plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.')[0] + ".png"
+    plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.txt')[0] + ".png"
     
     if plot_best_fits:
     

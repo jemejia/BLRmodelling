@@ -166,7 +166,7 @@ for i in sp_to_run:
     t0=time.time()
     
     fileroot= filenames[i]
-    objname=fileroot.split('.'+extension)[0]
+    objname=fileroot.split('.txt'+extension)[0]
     
     spectrum_file=file=data_dir+fileroot
     print 'fitting ',line_to_fit,' in ', fileroot,'\n\n\n\n'

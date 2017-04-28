@@ -290,7 +290,8 @@ for i in sp_to_run:
         xmin_fe=2550
         xmax_fe=3020
         if inter==0:
-            fe_fit,fe_uv_params=fe_fitter(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
+            #fe_fit,fe_uv_params=fe_fitter(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
+            fe_fit,fe_uv_params=fe_fitter_shift(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
             
             
             pylab.rcParams["figure.figsize"]=8,6            
@@ -419,14 +420,14 @@ for i in sp_to_run:
             
     sp.data=sp2.data - continuous_UV
     #fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.92,1.02], vlim=[-0.1,0.1], do_fit=fit_fe_UV)
-    fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.70,1.3], vlim=[-3.0,3.0], do_fit=fit_fe_UV)
+    fe_fit_red,params1=rescale(sp,"SBB",i,xbreak,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.92,1.02], vlim=[-0.1,0.1], do_fit=fit_fe_UV)
     
     
     fe_template_UV.data=fe_fit1
     fe_template_UV.xarr=sp.xarr
     sp.data=sp2.data - continuous_UV
     
-    fe_fit_blue,params1=rescale(sp,"SBB",i,xmin_fe,xbreak,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.70,1.3], vlim=[-3.0,3.0], do_fit=fit_fe_UV)
+    fe_fit_blue,params1=rescale(sp,"SBB",i,xmin_fe,xbreak,fe_template_UV,mag_order,plot_path=plot_objpath,slim=[0.85,1.10], vlim=[-0.1,0.1], do_fit=fit_fe_UV)
     argbreak=np.argmin(np.abs(sp.xarr.value-xbreak))
     argbalmer=np.argmin(np.abs(sp.xarr.value-xbalmer))
     
@@ -437,7 +438,7 @@ for i in sp_to_run:
     
     if plot_best_fits:
         copy1=sp.copy() 
-        plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.')[0] + "_fe_fit.png"
+        plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.txt')[0] + "_fe_fit.png"
 
         pylab.figure()
         pylab.ylim(ymin=-1.2*np.abs(sp.data[fitmin:fitmax].min()),ymax=2*sp.specfit.residuals[fitmin:fitmax].max())
@@ -533,7 +534,7 @@ for i in sp_to_run:
 
 
     if plot_best_fits:
-        plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.')[0] + ".png"
+        plot_file=plot_objpath + line_to_fit + "_"+ fileroot.split('.txt')[0] + ".png"
 
     
         pylab.rcParams["figure.figsize"]=16,6

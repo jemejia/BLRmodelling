@@ -3,7 +3,7 @@ import json
 import pylab
 import numpy as np
 from fitcode.line import *
-pylab.rcParams["figure.figsize"]=8,8
+pylab.rcParams["figure.figsize"]=10,8
 if len(sys.argv)<2:
     line_to_fit='CIV'
 else:

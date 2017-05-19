@@ -2010,9 +2010,149 @@ def fe_fitter(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path
     else:
         model=0.0*sp.data
     return model,out_params
+"""
+def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
+        sp_copy=sp.copy()
+        sp.plotter.autorefresh=False
+        #number,name,mag,group,redshift,galactic_comp=np.genfromtxt("quasar_data.txt", dtype="|S10",unpack=True)       
+        #del(number,mag,redshift)
+        
+        new_template=fe_template.copy()            
+        new_template1 = pyspeckit.interpolation.interp(new_template,sp)
+        deltav=100.0/2.355
+        sigmatemplate=900.0/2.355
+            
+        x2800=np.argmin(np.abs(sp.xarr.value-central_wl))
+        dl=sp.xarr.value[x2800+1]-sp.xarr.value[x2800]
+        sigma_model=fe_uv_params[0]/2.355
+        delta_sigma=np.sqrt(sigma_model*sigma_model-sigmatemplate*sigmatemplate)
+        sigma=kms_to_wl(delta_sigma,lambda0)/dl 
+        
+        fe_template.data=gauss_conv(fe_template.data, sigma, order=0, output=None, mode='reflect', cval=0.0)
+        arg_fe=np.argmin(np.abs(sp.xarr.value - 5100.0))
+        if spec_number==27:arg_fe=np.argmin(np.abs(sp.xarr.value - 4550.0))
+        fe_template.data*=np.abs(np.mean(sp.data[arg_fe-10:arg_fe+10])/np.mean(new_template1.data[arg_fe-10:arg_fe+10]))
+        sp_backup=sp.copy()
+        sp1=sp.copy()
+        sp1.data=sp.data+continuous.data
+        
+        fe_template.xarr=fe_template.xarr+fe_uv_params[1]*fe_template.xarr.unit
+        
+        
+        
+        #-----------------------------defining fe template fitter ------------------------------------#
+        #-----------restarting plotter------------#
+        
+        #sp.plotter.refresh()    
+        #sp.plotter.reset_limits()
+        #sp.plotter(figure=1,xmin=xmin,xmax=xmax)
+        
+        #-----------restarting plotter------------#
+       
+        
+        # -----------------  fitting ---------------------
+        
+        exclude_file = "./excludes/exclude_" + line_name + ".txt"
+        if os.path.exists(exclude_file) and os.path.isfile(exclude_file):
+            exclude_data=np.loadtxt(exclude_file,skiprows=2)
+            exclude=exclude_data[spec_number,:]
+            
+        else:
+            exclude=[]
+            
+        s_fe=np.arange(0.65,1.5,0.05)
+        shift_total=np.arange(-10.0,10.0,1.0)
+        chi2=np.empty(len(shift_total)*len(s_cont))
+        
+        shift=np.empty(len(shift_total)*len(s_cont))
+        scale_f=np.empty(len(shift_total)*len(s_cont))
+                
+        i=0
+        
+        for shift_fe in shift_total:
+            for scale_fe in s_fe:
+                fitter_name='scale'+str(np.random.rand(1)[0])
+                fe_template1=fe_template.copy()
+                fe_template1.xarr=fe_template.xarr + shift_fe
+                fe_template1.data*=scale_fe
+		fe_template_data=np.interp(sp.xarr.value,fe_template1.xarr.value,fe_template1.data,right=fe_template1.data[-1],left=fe_template1.data[0])
+		try:
+		    chi2[i]=np.sum(((sp.data-fe_template_data)/sp.error)**2)
+		except:
+                    chi2[i]=np.sum(((sp.data-fe_template_data))**2)
+
+                shift[i]=shift_fe
+                scale_c[i]=scale_fe
+                    
+		i=i+1
+        arg_chi=np.argmin(chi2)
+        
+        chi2_min=chi2[arg_chi]
+        shift_min=shift[arg_chi]
+        scale_f_min=scale_f[arg_chi]
+        
+        
+        
+        
+        sp.data=sp1.data - continuous.data #- galaxy_template.data
+        
+        fe_template.data=scale_f_min*fe_template.data
+        fe_template.xarr=fe_template.xarr+shift_min*fe_template.xarr.unit
+        
+        out_params=np.empty(2)    
+        out_params[0]=scale_f_min
+        out_params[1]=shift_min
+        #out_params[2]=scale_c_min
+        
+        
+        sorted=np.argsort(chi2)
+
+        new_template = pyspeckit.interpolation.interp(fe_template,sp)
+        
+        sp.specfit.residuals=sp.data - new_template.data
+        sp.specfit.fullmodel=new_template.data
+                
+        
+        sp.specfit.fullsizemodel() 
+        fitmin=np.argmin(np.abs(sp.xarr.value-xmin))
+        fitmax=np.argmin(np.abs(sp.xarr.value-xmax))
+
+        if plot_figure:
+            plot_file=plot_path + "fe_fit_" + line_name + "_"  + objectname+".png"
+            pylab.figure()
+            pylab.ylim(ymin=-1.2*np.abs(sp.data[fitmin:fitmax].min()),ymax=2*sp.specfit.residuals[fitmin:fitmax].max())
+            pylab.xlim(xmin=xmin-300,xmax=xmax)
+            pylab.ylabel(r'$10^{'+str(magorder-8)+'}$ erg s$^{-1}$  $\AA^{-1}$')
+            pylab.xlabel(r'$\AA$')
+            pylab.plot(sp.xarr,sp.data,'k')
+            pylab.plot(sp.xarr,sp.specfit.fullmodel,'r')
+            pylab.savefig(plot_file)
+            
+            
+        
+        
+            pylab.figure()
+            pylab.ylim(ymin=-1.2*np.abs(np.min(sp.data[fitmin:fitmax])),ymax=1.1*np.max(sp.specfit.residuals[fitmin:fitmax]))
+            pylab.xlim(xmin=sp.xarr.value[fitmin],xmax=sp.xarr.value[fitmax])
+            pylab.ylabel(r'$10^{-'+str(magorder-8)+'}$ erg s$^{-1}$ $\AA^{-1}$')
+            pylab.xlabel(r'$\AA$')
+            
+            pylab.plot(sp.xarr[fitmin:fitmax],sp.specfit.residuals[fitmin:fitmax],'k')
+            plot_file=plot_path + line_name +"_res_" +"_"+ objectname + '.png' #pylab.close()
+            pylab.savefig(plot_file)
+        # ----------plotting residuals-------------#
+    
+        #----------redifining spectrum ------------------#
+        sp.data=sp.data - sp.specfit.fullmodel
+        #----------redifining spectrum ------------------#
+        model=sp.specfit.fullmodel
+    else:
+        model=0.0*sp.data
+    return model,continuous,fe_template,out_params,chi2_min
 
 
 
+"""
 
 def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
     if do_fit:
@@ -3141,7 +3281,7 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         new_template=fe_template.copy()            
         deltav=100.0/2.355
         sigmatemplate=900.0/2.355
-        shift_total=np.arange(-20.0,21.0,1.0)    
+        shift_total=np.arange(-10.0,10.0,1.0)    
             
         templates=np.empty( (len(fe_template.data),100) )
         chi2=np.empty(100)
@@ -3228,10 +3368,10 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         
         print np.argsort(chi2)[:10]
 
-        new_template = pyspeckit.interpolation.interp(new_template,sp)
-                    
-        sp.specfit.residuals=sp.data - new_template.data
-        sp.specfit.fullmodel=new_template.data
+        #new_template = pyspeckit.interpolation.interp(new_template,sp)
+	new_template_data=np.interp(sp.xarr.value,new_template.xarr,new_template.data,right=new_template.data[-1],left=new_template.data[0])
+        sp.specfit.residuals=sp.data - new_template_data
+        sp.specfit.fullmodel=new_template_data
         
         print "arg_chi,chi,amp,shift,fwhm= ",arg_chi,chi2_min,amplitude_min,shift_min,fwhm_min
         # -----------------  fitting ---------------------
@@ -3239,8 +3379,8 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
     # -----------------  ploting  fit---------------------
         
         sp.specfit.fullsizemodel() 
-        fitmin=np.argmin(np.abs(sp.xarr-xmin))
-        fitmax=np.argmin(np.abs(sp.xarr-xmax))
+        fitmin=np.argmin(np.abs(sp.xarr.value-xmin))
+        fitmax=np.argmin(np.abs(sp.xarr.value-xmax))
         print fitmin, fitmax, len(sp.data)
         
         plot_file=plot_path + "fe_fit_" + line_name   + "_0.png"
@@ -3261,11 +3401,11 @@ def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
         
         pylab.figure()
         pylab.ylim(ymin=-1.2*np.abs(sp.data[fitmin:fitmax].min()),ymax=1.1*sp.specfit.residuals[fitmin:fitmax].max())
-        pylab.xlim(xmin=sp.xarr[fitmin],xmax=sp.xarr[fitmax])
+        pylab.xlim(xmin=sp.xarr.value[fitmin],xmax=sp.xarr.value[fitmax])
         pylab.ylabel(r'$10^{-'+str(magorder-8)+'}$ erg s$^{-1}$ $\AA^{-1}$')
         pylab.xlabel(r'$\AA$')
-        pylab.plot(sp.xarr[fitmin:fitmax],sp.specfit.residuals[fitmin:fitmax],'k')
-        plot_file=plot_path + line_name +"_res_" + group[spec_number]+"_"+ name[spec_number] + ".png"
+        pylab.plot(sp.xarr.value[fitmin:fitmax],sp.specfit.residuals[fitmin:fitmax],'k')
+        plot_file=plot_path + line_name +"_res_"  + ".png"
         pylab.savefig(plot_file)
         #pylab.close()
         # ----------plotting residuals-------------#

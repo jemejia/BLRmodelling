@@ -1829,7 +1829,7 @@ def fe_fitter(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path
                                                                        3, 
                                                                        parnames=['scale_fe','shift_fe','smooth_fe'],#,'scale_balmer'], 
                                                                        parlimited=[(True,True),(False,False),(True,False)],#,(False,False)],  
-                                                                       parlimits=[(0.1,10.0), (-10.0,10.0),(0,0)],#,(0.9,1.1)], 
+                                                                       parlimits=[(0.1,10.0), (-30.0,30.0),(0,0)],#,(0.9,1.1)], 
                                                                        
                                                                        shortvarnames=(r'Af',r'\Delta xf',r'sigma_xf'),#,r'Ab'),
                                                                        centroid_par='shift_fe' )
@@ -1911,7 +1911,7 @@ def fe_fitter(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path
                                                                        3, 
                                                                        parnames=['scale_fe','shift_fe','smooth_fe'],#,'scale_balmer'], 
                                                                        parlimited=[(True,True),(False,False),(True,False)],#,(False,False)],  
-                                                                       parlimits=[(0.1,10.0), (-10.0,10.0),(0,0)],#,(0.9,1.1)], 
+                                                                       parlimits=[(0.05,10.0), (-30.0,30.0),(0,0)],#,(0.9,1.1)], 
                                                                        shortvarnames=(r'Af',r'\Delta xf',r'sigma_xf'),#,r'Ab'),
                                                                        centroid_par='shift_fe' )
             modelclass.__name__ = "template1"
@@ -2010,8 +2010,9 @@ def fe_fitter(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path
     else:
         model=0.0*sp.data
     return model,out_params
-"""
-def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
+
+def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
+    if do_fit:
         sp_copy=sp.copy()
         sp.plotter.autorefresh=False
         #number,name,mag,group,redshift,galactic_comp=np.genfromtxt("quasar_data.txt", dtype="|S10",unpack=True)       
@@ -2029,13 +2030,14 @@ def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template,
         sigma=kms_to_wl(delta_sigma,lambda0)/dl 
         
         fe_template.data=gauss_conv(fe_template.data, sigma, order=0, output=None, mode='reflect', cval=0.0)
-        arg_fe=np.argmin(np.abs(sp.xarr.value - 5100.0))
-        if spec_number==27:arg_fe=np.argmin(np.abs(sp.xarr.value - 4550.0))
+        arg_fe=np.argmin(np.abs(sp.xarr.value - central_wl))
+        #if spec_number==27:arg_fe=np.argmin(np.abs(sp.xarr.value - 4550.0))
         fe_template.data*=np.abs(np.mean(sp.data[arg_fe-10:arg_fe+10])/np.mean(new_template1.data[arg_fe-10:arg_fe+10]))
         sp_backup=sp.copy()
         sp1=sp.copy()
         sp1.data=sp.data+continuous.data
-        
+        print len(sp.data)
+	print len(continuous.data)
         fe_template.xarr=fe_template.xarr+fe_uv_params[1]*fe_template.xarr.unit
         
         
@@ -2060,20 +2062,22 @@ def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template,
         else:
             exclude=[]
             
-        s_fe=np.arange(0.65,1.5,0.05)
-        shift_total=np.arange(-10.0,10.0,1.0)
-        chi2=np.empty(len(shift_total)*len(s_cont))
+        s_fe=np.arange(0.1,10.0,0.15)
+	dl_fes=2000*central_wl/3e5
+        shift_total=np.arange(-dl_fes,dl_fes,dl_fes/20.0)
+        sconts=np.arange(0.85,1.0,0.025)
+	chi2=np.empty(len(shift_total)*len(s_fe))
         
-        shift=np.empty(len(shift_total)*len(s_cont))
-        scale_f=np.empty(len(shift_total)*len(s_cont))
-                
+        shift=np.empty(len(shift_total)*len(s_fe))
+        scale_f=np.empty(len(shift_total)*len(s_fe))
+	
         i=0
         
         for shift_fe in shift_total:
             for scale_fe in s_fe:
                 fitter_name='scale'+str(np.random.rand(1)[0])
                 fe_template1=fe_template.copy()
-                fe_template1.xarr=fe_template.xarr + shift_fe
+                fe_template1.xarr=fe_template.xarr + shift_fe*fe_template1.xarr.unit
                 fe_template1.data*=scale_fe
 		fe_template_data=np.interp(sp.xarr.value,fe_template1.xarr.value,fe_template1.data,right=fe_template1.data[-1],left=fe_template1.data[0])
 		try:
@@ -2082,7 +2086,7 @@ def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template,
                     chi2[i]=np.sum(((sp.data-fe_template_data))**2)
 
                 shift[i]=shift_fe
-                scale_c[i]=scale_fe
+                scale_f[i]=scale_fe
                     
 		i=i+1
         arg_chi=np.argmin(chi2)
@@ -2143,7 +2147,7 @@ def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template,
         # ----------plotting residuals-------------#
     
         #----------redifining spectrum ------------------#
-        sp.data=sp.data - sp.specfit.fullmodel
+	sp.data=sp.data - sp.specfit.fullmodel
         #----------redifining spectrum ------------------#
         model=sp.specfit.fullmodel
     else:
@@ -2152,9 +2156,9 @@ def scale_and_shift(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template,
 
 
 
-"""
 
-def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5000.0):
+
+def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, continuous, galaxy_template,fitter_name,magorder,lambda0,objectname='test',plot_path="./plots/"  ,do_fit=True,  plot_figure=0,central_wl=5100.0,fcont_min=1.0,fcont_max=1.01):
     if do_fit:
         sp_copy=sp.copy()
         sp.plotter.autorefresh=False
@@ -2173,8 +2177,8 @@ def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, contin
         sigma=kms_to_wl(delta_sigma,lambda0)/dl 
         
         fe_template.data=gauss_conv(fe_template.data, sigma, order=0, output=None, mode='reflect', cval=0.0)
-        arg_fe=np.argmin(np.abs(sp.xarr.value - 5100.0))
-        if spec_number==27:arg_fe=np.argmin(np.abs(sp.xarr.value - 4550.0))
+        arg_fe=np.argmin(np.abs(sp.xarr.value - central_wl))
+        #if spec_number==27:arg_fe=np.argmin(np.abs(sp.xarr.value - 4550.0))
         fe_template.data*=np.abs(np.mean(sp.data[arg_fe-10:arg_fe+10])/np.mean(new_template1.data[arg_fe-10:arg_fe+10]))
         sp_backup=sp.copy()
         sp1=sp.copy()
@@ -2204,7 +2208,7 @@ def fe_scale(sp,fe_uv_params,line_name,spec_number,xmin,xmax,fe_template, contin
         else:
             exclude=[]
             
-        s_cont=np.arange(1.0,1.01,0.02)
+        s_cont=np.arange(fcont_min,fcont_max,0.02)
         shift_total=np.arange(0.0,1.0,2.5)
         chi2=np.empty(len(shift_total)*len(s_cont))
         amplitude=np.empty(len(shift_total)*len(s_cont))
@@ -3091,7 +3095,7 @@ def rescale(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="
 
 
 
-    
+"""    
 def scale_and_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="./plots/", slim=[0.1,10.0],vlim=[-10.0,10.0],do_fit=True):
     if do_fit:
         
@@ -3193,7 +3197,7 @@ def scale_and_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plo
 
 
 
-
+"""
 
 def fe_fitter_shift(sp,line_name,spec_number,xmin,xmax,fe_template, magorder,plot_path="./plots/", do_fit=True):
     if do_fit:
@@ -3470,6 +3474,7 @@ def load_op_template(sp,mag_order,fe_template_OP_file,galaxy_template_file):
     galaxy_template=pyspeckit.Spectrum(galaxy_template_file)
     xmin_fe_template=fe_template.xarr[0]
     fe_template.xarr.unit==un.Angstrom#'angstroms'
+    #fe_template.xarr.set_unit(un.Angstrom)
     #fe_template.xarr.unit='angstroms'
     fe_template.xarr.xtype='wavelength'
     #galaxy_template.xarr.unit='angstroms'
@@ -3514,7 +3519,7 @@ def load_uv_template(sp,mag_order,fe_template_UV_file):
             
     # -----------set up units properly------------------#        
     fe_template_UV.xtype = 'wavelength'
-    fe_template_UV.xarr.set_unit(un.Angstrom)
+    #fe_template_UV.xarr.set_unit(un.Angstrom)
     #sp.xarr.units='angstrom'
 
     

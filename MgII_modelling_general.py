@@ -293,7 +293,8 @@ for i in sp_to_run:
         xmax_fe=3020
         if inter==0:
             fe_fit,fe_uv_params=fe_fitter(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
-            shift0=0#fe_uv_params[1]
+            shift0=0#
+            #shift0=fe_uv_params[1]
             
             amp0=fe_uv_params[2]
             #fe_fit,cont,fe_template_UV,fe_uv_params,chi2op=scale_and_shift(sp,fe_op_params,"optical",i,xmin_fe,xmax_fe,fe_template,cont,f_name[iter],mag_order,lambda0,objectname=objname,plot_path=plot_objpath, do_fit=fit_fe_OP,central_wl=4700)
@@ -334,7 +335,7 @@ for i in sp_to_run:
         
         pylab.rcParams["figure.figsize"]=16,6            
         lambda0=2800.0
-        #fe_fit,cont,fe_template_UV,fe_params=fe_scale(sp,fe_uv_params,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,cont,galaxy_template,f_name[inter],mag_order,lambda0,plot_path=plot_objpath, do_fit=fit_fe_UV)
+        fe_fit,cont,fe_template_UV,fe_params=fe_scale(sp,fe_uv_params,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,cont,galaxy_template,f_name[inter],mag_order,lambda0,plot_path=plot_objpath, do_fit=fit_fe_UV)
         fe_fit,params1=rescale(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
         #fe_fit,cont,fe_template_UV,params1,chi2uv=scale_and_shift(sp,fe_uv_params,"UV",i,xmin_fe,xmax_fe,fe_template_UV,cont,f_name[iter],mag_order,lambda0,objectname=objname,plot_path=plot_objpath, do_fit=fit_fe_OP,central_wl=4700)
         fe_uv_params[0]=FWHMV_Mg
@@ -381,13 +382,24 @@ for i in sp_to_run:
         sigma=kms_to_wl(np.sqrt(sigmav_Mg*sigmav_Mg-sigma_template*sigma_template),2800) 
         fe_template_UV.data=gauss_conv(fe_template_UV.data, sigma, order=0, output=None, mode='reflect', cval=0.0)
         fe_template_UV.data*=fe_uv_params[2]
-        #fe_template_UV.xarr=fe_template_UV.xarr-(fe_uv_params[1])*fe_template_UV.xarr.unit
+        fe_template_UV.xarr=fe_template_UV.xarr+(fe_uv_params[1])*fe_template_UV.xarr.unit
         pylab.rcParams["figure.figsize"]=16,6            
         
         fe_fit,params1=rescale(sp,"SBB",i,xmin_fe,xmax_fe,fe_template_UV,mag_order,plot_path=plot_objpath, do_fit=fit_fe_UV)
+
+
+        fe_uv_params[0]=FWHMV_Mg
+        shift2=params1[1]
+        fe_uv_params[1]=shift2+shift1+shift0
+        
+        amp2=params1[0]
+        fe_uv_params[2]=amp0*amp1*amp2
+
+
         fe_uv_params[0]=FWHMV_Mg
         fe_uv_params[1]=params1[1]
-        fe_uv_params[2]=params1[0]+shift1
+        
+        fe_uv_params[2]=params1[0]+shift1+shift0
         print "fe_uv_params=",fe_uv_params
         pylab.rcParams["figure.figsize"]=8,6            
         MgII_fit,object_dictionary['MgII_complex']=line_fitter(sp, "MgII", i, guesses_MgII, limits_MgII, limited_MgII, tied_MgII, xmin_MgII, xmax_MgII,offset=-0.05, magorder=mag_order,plot_path=plot_objpath, linenames=lines_dict['MgII_complex'], do_fit=fit_Mg)
